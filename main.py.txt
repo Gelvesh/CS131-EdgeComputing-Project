@@ -1,0 +1,3 @@
+# Our list of known face encodings and a matching list of metadata about each face.
+known_face_encodings = []
+known_face_metadata = []
