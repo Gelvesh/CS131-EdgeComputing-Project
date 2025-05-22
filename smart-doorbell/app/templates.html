@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Visitor History</h1>
+<table>
+    <tr>
+        <th>Time</th>
+        <th>Name</th>
+        <th>Photo</th>
+    </tr>
+    {% for visitor in visitors %}
+    <tr>
+        <td>{{ visitor['timestamp'] }}</td>
+        <td>{{ visitor['name'] }}</td>
+        <td><img src="{{ visitor['image_path'] }}" width="100"></td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
