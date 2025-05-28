@@ -11,14 +11,12 @@ Place clear frontal images of people you want to recognize (e.g., brandon.jpg, r
 4. Make sure an alert_image directory exists:
 mkdir alert_image
 
-5. Make sure your image files (brandon.jpg, rachel.jpg) are in the same directory.
-
-6. Run the Code
+5. Run the Code
 From your terminal or Anaconda prompt:
 python face_alert.py
 
-7. Now, your script will:
+6. Now, your script will:
 Detect faces
-Alert you by email (with an attached image) when an unknown is seen (no spam)
-Display video window and labels
+Alert you by email (with an attached image) when an unknown person is seen
+Display video window and labels for a known person
 Safely clean up after itself
