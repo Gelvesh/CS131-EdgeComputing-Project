@@ -11,37 +11,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 
-
-# Added Caden
-from app.services.notification import NotificationService
-from config import CONFIG
-
-# Notification Service
-# Initialize service
-notifier = NotificationService(CONFIG)
-
-# In your detection loop where unknown faces are handled:
-if name == "Unknown":
-    img_path = f"alerts/{time.strftime('%Y%m%d-%H%M%S')}.jpg"
-    cv2.imwrite(img_path, frame)
-    
-    # Send notifications
-    notifier.send_email(
-        'user@example.com',
-        'Unknown Visitor',
-        f'<p>Unknown person detected at {time.ctime()}</p>',
-        img_path
-    )
-    notifier.send_push(
-        ['device_token_1'],
-        'Door Alert',
-        'Unknown visitor detected'
-    )
-
-
-
-
-
 # Directory to store alert images
 alertDir = "alert_image"
 alertfile = 'alert.jpg'
@@ -192,9 +161,6 @@ while True:
     # Quit on 'q' key
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
-
-
 
 # Cleanup
 video_capture.release()
