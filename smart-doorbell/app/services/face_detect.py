@@ -20,6 +20,12 @@ alert_path = os.path.join(alertDir, alertfile)
 os.makedirs(alertDir, exist_ok=True)
 print("Before saving image:", os.listdir(alertDir))
 
+# Latest frame buffer for external access
+latest_frame = None
+def get_latest_frame():
+    global latest_frame
+    return latest_frame
+
 # === EMAIL SETUP ===
 def pushMail(attach_path):
     sender_email = 'ggang004@ucr.edu'
@@ -38,16 +44,12 @@ def pushMail(attach_path):
         msg['Subject'] = 'UNKNOWN PERSON DETECTED'
         msg.attach(MIMEText(email_body, 'html'))
 
-        # Attach the alert image
         try:
             with open(attach_path, "rb") as attachment:
                 part = MIMEBase("application", "octet-stream")
                 part.set_payload(attachment.read())
             encoders.encode_base64(part)
-            part.add_header(
-                "Content-Disposition",
-                f"attachment; filename= {os.path.basename(attach_path)}",
-            )
+            part.add_header("Content-Disposition", f"attachment; filename= {os.path.basename(attach_path)}")
             msg.attach(part)
         except Exception as e:
             print(f"Attachment error: {e}")
@@ -79,8 +81,7 @@ def load_face_encoding(path, name):
 
 known_face_encodings = []
 known_face_names = []
-for img_path, person in [("brandon.jpg", "Brandon"),
-                         ("rachel.jpg",  "Rachel")]:
+for img_path, person in [("brandon.jpg", "Brandon"), ("rachel.jpg", "Rachel")]:
     enc, name = load_face_encoding(img_path, person)
     if enc is not None:
         known_face_encodings.append(enc)
@@ -94,9 +95,9 @@ face_locations = []
 face_encodings = []
 face_names = []
 
-# --- Cooldown timer (avoid email spam) ---
+# Cooldown to prevent email spam
 last_alert_time = 0
-alert_cooldown = 30  # seconds between alerts
+alert_cooldown = 30  # seconds
 
 def send_and_delete(path):
     pushMail(path)
@@ -111,19 +112,17 @@ while True:
     if not ret:
         continue
 
+    # ⬅️ Save current frame globally for Flask
+    latest_frame = frame.copy()
+
     # Downsample for speed
     small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
     rgb_small = small_frame[:, :, ::-1]
 
     if process_this_frame:
         small_locs = face_recognition.face_locations(rgb_small)
-        face_locations = [(top*4, right*4, bottom*4, left*4) for
-                          (top, right, bottom, left) in small_locs]
-
-        if face_locations:
-            face_encodings = face_recognition.face_encodings(frame, face_locations)
-        else:
-            face_encodings = []
+        face_locations = [(top*4, right*4, bottom*4, left*4) for (top, right, bottom, left) in small_locs]
+        face_encodings = face_recognition.face_encodings(frame, face_locations) if face_locations else []
 
         face_names = []
         for enc in face_encodings:
@@ -133,35 +132,28 @@ while True:
                 name = known_face_names[matches.index(True)]
             face_names.append(name)
 
-            # ALERT logic (threaded, no freeze)
             now = time.time()
             if name == "Unknown" and (now - last_alert_time > alert_cooldown):
                 print("Who the heck is this?!")
                 cv2.imwrite(alert_path, frame)
                 print("After saving image:", os.listdir(alertDir))
-
                 threading.Thread(target=send_and_delete, args=(alert_path,), daemon=True).start()
-
                 last_alert_time = now
 
     process_this_frame = not process_this_frame
 
-    # Draw boxes and labels
     for (top, right, bottom, left), name in zip(face_locations, face_names):
         cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-        cv2.rectangle(frame, (left, bottom-35), (right, bottom), (0,0,255), cv2.FILLED)
-        cv2.putText(frame, name, (left+6, bottom-6),
-                    cv2.FONT_HERSHEY_DUPLEX, 1.0, (255,255,255), 1)
+        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+        cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 1.0, (255, 255, 255), 1)
 
-    # Show the window
+    # Optional display
     cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
     cv2.resizeWindow('Video', 600, 600)
     cv2.imshow('Video', frame)
 
-    # Quit on 'q' key
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Cleanup
 video_capture.release()
 cv2.destroyAllWindows()
