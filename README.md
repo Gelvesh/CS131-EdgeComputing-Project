@@ -86,6 +86,8 @@ python cloud/upload_gcs.py
 If needed, reset the credentials before continuing:
 $env:GOOGLE_APPLICATION_CREDENTIALS="C:\rishika\masters\q3\cs131\project\main\CS131-EdgeComputing-Project\cs131project-461300-7c6d4e93b117.json"
 
+They can be viewed here- "https://console.cloud.google.com/storage/browser/cs131project-bucket;tab=objects?forceOnBucketsSortingFiltering=true&inv=1&invt=AbywxA&project=cs131project-461300&prefix=&forceOnObjectsSortingFiltering=false"
+
 7. Download Encrypted Data from Cloud
 
 Run:
