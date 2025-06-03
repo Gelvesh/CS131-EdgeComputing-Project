@@ -52,6 +52,8 @@ This will :
 
 Display video window and labels
 
+Accessible remotely via http://[Host-IP]:5000 on any smartphone/PC browser
+
 Alert you by email (with an attached image) when an unknown is seen (no spam)
 
 alert_image/alert.jpg when an unknown face is detected
