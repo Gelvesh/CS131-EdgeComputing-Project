@@ -15,7 +15,7 @@ from flask import Flask, Response, render_template_string
 
 # Initialize Flask app
 app = Flask(__name__)
-latest_frame = None
+latest_annotated_frame = None  # Changed to store the frame with boxes and labels
 frame_lock = threading.Lock()
 
 # HTML template for the web interface
@@ -29,11 +29,13 @@ HTML_TEMPLATE = """
         h1 { color: #333; text-align: center; }
         .container { max-width: 800px; margin: 0 auto; }
         img { width: 100%; border: 2px solid #333; }
+        .status { text-align: center; margin: 10px 0; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Face Detection Live Feed</h1>
+        <div class="status">Detection active | <a href="/video_feed">Direct video feed</a></div>
         <img src="{{ url_for('video_feed') }}">
     </div>
 </body>
@@ -48,12 +50,12 @@ def index():
 @app.route('/video_feed')
 def video_feed():
     def generate():
-        global latest_frame
+        global latest_annotated_frame
         while True:
             with frame_lock:
-                if latest_frame is None:
+                if latest_annotated_frame is None:
                     continue
-                ret, buffer = cv2.imencode('.jpg', latest_frame)
+                ret, buffer = cv2.imencode('.jpg', latest_annotated_frame)
                 frame = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
@@ -136,70 +138,6 @@ for img_path, person in [("brandon.jpg", "Brandon"),
         known_face_encodings.append(enc)
         known_face_names.append(name)
 
-# === Main detection function ===
-def detect_faces():
-    global latest_frame
-    
-    video_capture = cv2.VideoCapture(0)
-    process_this_frame = True
-    face_locations = []
-    face_names = []
-    last_alert_time = 0
-    alert_cooldown = 30  # seconds between alerts
-
-    while True:
-        ret, frame = video_capture.read()
-        if not ret:
-            continue
-
-        # Update the latest frame for web streaming
-        with frame_lock:
-            latest_frame = frame.copy()
-
-        # Downsample for speed
-        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-        rgb_small = small_frame[:, :, ::-1]
-
-        if process_this_frame:
-            small_locs = face_recognition.face_locations(rgb_small)
-            face_locations = [(top*4, right*4, bottom*4, left*4) for
-                              (top, right, bottom, left) in small_locs]
-
-            face_encodings = face_recognition.face_encodings(frame, face_locations) if face_locations else []
-
-            face_names = []
-            for enc in face_encodings:
-                matches = face_recognition.compare_faces(known_face_encodings, enc)
-                name = "Unknown"
-                if True in matches:
-                    name = known_face_names[matches.index(True)]
-                face_names.append(name)
-
-                # ALERT logic
-                now = time.time()
-                if name == "Unknown" and (now - last_alert_time > alert_cooldown):
-                    print("Unknown person detected!")
-                    cv2.imwrite(alert_path, frame)
-                    threading.Thread(target=send_and_delete, args=(alert_path,), daemon=True).start()
-                    last_alert_time = now
-
-        process_this_frame = not process_this_frame
-
-        # Draw boxes and labels
-        for (top, right, bottom, left), name in zip(face_locations, face_names):
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-            cv2.rectangle(frame, (left, bottom-35), (right, bottom), (0,0,255), cv2.FILLED)
-            cv2.putText(frame, name, (left+6, bottom-6),
-                        cv2.FONT_HERSHEY_DUPLEX, 1.0, (255,255,255), 1)
-
-        # Show the local window
-        cv2.imshow('Local Video Feed', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    video_capture.release()
-    cv2.destroyAllWindows()
-
 def send_and_delete(path):
     pushMail(path)
     
@@ -224,6 +162,70 @@ def send_and_delete(path):
             print(f"Failed to delete alert image: {e}")
 
     threading.Thread(target=delayed_delete, args=(path,), daemon=True).start()
+
+def detect_faces():
+    global latest_annotated_frame
+    
+    video_capture = cv2.VideoCapture(0)
+    process_this_frame = True
+    last_alert_time = 0
+    alert_cooldown = 30  # seconds between alerts
+
+    while True:
+        ret, frame = video_capture.read()
+        if not ret:
+            continue
+
+        # Downsample for speed
+        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+        rgb_small = small_frame[:, :, ::-1]
+
+        if process_this_frame:
+            small_locs = face_recognition.face_locations(rgb_small)
+            face_locations = [(top*4, right*4, bottom*4, left*4) for
+                            (top, right, bottom, left) in small_locs]
+
+            face_encodings = face_recognition.face_encodings(frame, face_locations) if face_locations else []
+
+            face_names = []
+            for enc in face_encodings:
+                matches = face_recognition.compare_faces(known_face_encodings, enc)
+                name = "Unknown"
+                if True in matches:
+                    name = known_face_names[matches.index(True)]
+                face_names.append(name)
+
+                # ALERT logic
+                now = time.time()
+                if name == "Unknown" and (now - last_alert_time > alert_cooldown):
+                    print("Unknown person detected!")
+                    cv2.imwrite(alert_path, frame)
+                    threading.Thread(target=send_and_delete, args=(alert_path,), daemon=True).start()
+                    last_alert_time = now
+
+        process_this_frame = not process_this_frame
+
+        # Create a copy of the frame for annotation
+        annotated_frame = frame.copy()
+        
+        # Draw boxes and labels on the annotated frame
+        for (top, right, bottom, left), name in zip(face_locations, face_names):
+            cv2.rectangle(annotated_frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            cv2.rectangle(annotated_frame, (left, bottom-35), (right, bottom), (0,0,255), cv2.FILLED)
+            cv2.putText(annotated_frame, name, (left+6, bottom-6),
+                        cv2.FONT_HERSHEY_DUPLEX, 1.0, (255,255,255), 1)
+
+        # Update the latest annotated frame for web streaming
+        with frame_lock:
+            latest_annotated_frame = annotated_frame
+
+        # Show the local window (optional)
+        cv2.imshow('Local Video Feed', annotated_frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    video_capture.release()
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     # Start Flask in a separate thread
