@@ -110,5 +110,8 @@ decrypted/decrypted_image.bin
 
 decrypted/decrypted_log.txt
 
+9. View Database
+    python view_database
+
 
 
