@@ -74,11 +74,11 @@ alert_path = os.path.join(alertDir, alertfile)
 os.makedirs(alertDir, exist_ok=True)
 
 def pushMail(attach_path):
-    sender_email = 'cleun042@ucr.edu'
+    sender_email = 'ggang004@ucr.edu'
     sender_name = 'Your Name'
     password = 'hpdh rjbu isld ikgo'
 
-    receiver_emails = ['cleun042@ucr.edu']
+    receiver_emails = ['ggang004@ucr.edu']
     receiver_names = ['Recipient Name']
     email_body = 'Alert: Unknown person detected! See attached image.'
 
