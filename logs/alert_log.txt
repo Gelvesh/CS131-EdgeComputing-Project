@@ -1,14 +1,1 @@
-[2025-06-02 21:59:03] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 21:59:41] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:00:12] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:09:08] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:10:27] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:12:22] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:12:51] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:15:39] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:19:05] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:19:43] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:20:06] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:20:44] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:21:14] ALERT: Unknown person detected. Image: alert_image\alert.jpg
-[2025-06-02 22:21:42] ALERT: Unknown person detected. Image: alert_image\alert.jpg
+
